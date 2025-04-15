@@ -36,7 +36,7 @@
           <span class="message-author">{{ message.username }}</span>
           <span class="message-date">{{ message.created_at }}</span>
         </div>
-        <div class="message-content">{{ message.content }}</div>
+        <div class="message-content">{{ message.content | e}}</div>
         {% if session.user_id == message.user_id %}
         <div class="message-actions">
           <form
