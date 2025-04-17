@@ -1,3 +1,5 @@
+import re
+import subprocess
 from flask import Flask, abort, render_template, request, redirect, send_from_directory, url_for, flash, session
 from werkzeug.security import generate_password_hash, check_password_hash
 import sqlite3
@@ -207,38 +209,26 @@ def delete_message(message_id):
 def ping():
     result = None
     target = None
-    
+
     if request.method == 'POST':
         target = request.form.get('target')
-        if target:
+        if target and re.match(r'^[a-zA-Z0-9\.\-]+$', target):  # hostname/IP 檢查
             try:
-                # Execute ping command
-                import subprocess
-                # Using shell=True as per the requirement to directly execute the command
-                ping_process = subprocess.Popen(
-                    f"ping -c 4 {target}",
-                    shell=True,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE
+                ping_process = subprocess.run(
+                    ['ping', target],
+                    capture_output=True,
+                    text=True,
+                    timeout=5
                 )
-                stdout, stderr = ping_process.communicate()
-                
                 if ping_process.returncode == 0:
-                    result = {
-                        'success': True,
-                        'output': stdout.decode('utf-8', errors='replace')
-                    }
+                    result = {'success': True, 'output': ping_process.stdout}
                 else:
-                    result = {
-                        'success': False,
-                        'output': stderr.decode('utf-8', errors='replace') or stdout.decode('utf-8', errors='replace')
-                    }
+                    result = {'success': False, 'output': ping_process.stderr or ping_process.stdout}
             except Exception as e:
-                result = {
-                    'success': False,
-                    'output': str(e)
-                }
-    
+                result = {'success': False, 'output': str(e)}
+        else:
+            result = {'success': False, 'output': 'Invalid host format.'}
+
     return render_template('ping.html', title='Ping Tool', result=result, target=target)
 
 @app.route('/download')
