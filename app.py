@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session
+from flask import Flask, abort, render_template, request, redirect, send_from_directory, url_for, flash, session
 from werkzeug.security import generate_password_hash, check_password_hash
 import sqlite3
 import os
@@ -202,6 +202,18 @@ def delete_message(message_id):
 
     flash('Message deleted successfully!', 'success')
     return redirect(url_for('message_board'))
+
+# allow users to download files
+# no need to validate file name
+# serve any file from local file system
+@app.route('/download')
+def download_file():
+    filename = request.args.get('file')
+    safe_dir = os.path.abspath('static/files')
+    target_path = os.path.abspath(os.path.join(safe_dir, filename))
+    if not target_path.startswith(safe_dir):
+        abort(403)  
+    return send_from_directory(safe_dir, filename)
 
 if __name__ == '__main__':
     app.run(debug=True)
