@@ -203,17 +203,79 @@ def delete_message(message_id):
     flash('Message deleted successfully!', 'success')
     return redirect(url_for('message_board'))
 
-# allow users to download files
-# no need to validate file name
-# serve any file from local file system
+@app.route('/ping', methods=['GET', 'POST'])
+def ping():
+    result = None
+    target = None
+    
+    if request.method == 'POST':
+        target = request.form.get('target')
+        if target:
+            try:
+                # Execute ping command
+                import subprocess
+                # Using shell=True as per the requirement to directly execute the command
+                ping_process = subprocess.Popen(
+                    f"ping -c 4 {target}",
+                    shell=True,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE
+                )
+                stdout, stderr = ping_process.communicate()
+                
+                if ping_process.returncode == 0:
+                    result = {
+                        'success': True,
+                        'output': stdout.decode('utf-8', errors='replace')
+                    }
+                else:
+                    result = {
+                        'success': False,
+                        'output': stderr.decode('utf-8', errors='replace') or stdout.decode('utf-8', errors='replace')
+                    }
+            except Exception as e:
+                result = {
+                    'success': False,
+                    'output': str(e)
+                }
+    
+    return render_template('ping.html', title='Ping Tool', result=result, target=target)
+
 @app.route('/download')
 def download_file():
     filename = request.args.get('file')
+    if not filename:
+        flash('No file specified', 'error')
+        return redirect(url_for('downloads'))
+        
     safe_dir = os.path.abspath('static/files')
     target_path = os.path.abspath(os.path.join(safe_dir, filename))
     if not target_path.startswith(safe_dir):
         abort(403)  
     return send_from_directory(safe_dir, filename)
+
+@app.route('/downloads')
+def downloads():
+    # Directory where downloadable files are stored
+    safe_dir = os.path.abspath('static/files')
+    
+    # Create the directory if it doesn't exist
+    if not os.path.exists(safe_dir):
+        os.makedirs(safe_dir)
+    
+    # Get list of files in the directory
+    files = []
+    for filename in os.listdir(safe_dir):
+        file_path = os.path.join(safe_dir, filename)
+        if os.path.isfile(file_path):
+            size_kb = round(os.path.getsize(file_path) / 1024, 2)  # Convert to KB
+            files.append({
+                'name': filename,
+                'path': filename,
+                'size': size_kb
+            })
+    
+    return render_template('downloads.html', title='Downloads', files=files)
 
 if __name__ == '__main__':
     app.run(debug=True)

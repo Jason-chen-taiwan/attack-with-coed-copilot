@@ -1,0 +1,32 @@
+{% extends "base.html" %} {% block content %}
+<div class="container">
+  <h1>Network Connectivity Checker</h1>
+  <p>Enter an IP address or hostname to check if it's reachable.</p>
+
+  <div class="ping-form">
+    <form method="POST" action="{{ url_for('ping') }}">
+      <div class="form-group">
+        <label for="target">Target IP/Hostname:</label>
+        <input
+          type="text"
+          id="target"
+          name="target"
+          placeholder="e.g., 8.8.8.8 or google.com"
+          value="{{ target }}"
+          required
+        />
+      </div>
+      <button type="submit">Check Connectivity</button>
+    </form>
+  </div>
+
+  {% if result %}
+  <div
+    class="ping-result {% if result.success %}success{% else %}error{% endif %}"
+  >
+    <h2>Results for {{ target }}</h2>
+    <pre>{{ result.output }}</pre>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

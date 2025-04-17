@@ -1,0 +1,49 @@
+{% extends "base.html" %} {% block content %}
+<div class="container">
+  <div class="downloads-header">
+    <h1>Available Downloads</h1>
+    <p>Browse and download files from our collection.</p>
+  </div>
+
+  <div class="downloads-container">
+    {% if files %}
+    <div class="files-grid">
+      {% for file in files %}
+      <div class="file-card">
+        <div class="file-icon">
+          {% if file.name.endswith('.pdf') %}
+          <i class="file-type pdf">PDF</i>
+          {% elif file.name.endswith('.doc') or file.name.endswith('.docx') %}
+          <i class="file-type doc">DOC</i>
+          {% elif file.name.endswith('.jpg') or file.name.endswith('.png') or
+          file.name.endswith('.gif') %}
+          <i class="file-type img">IMG</i>
+          {% elif file.name.endswith('.zip') or file.name.endswith('.rar') %}
+          <i class="file-type zip">ZIP</i>
+          {% else %}
+          <i class="file-type">FILE</i>
+          {% endif %}
+        </div>
+        <div class="file-details">
+          <h3 class="file-name">{{ file.name }}</h3>
+          <span class="file-size">{{ file.size }} KB</span>
+        </div>
+        <a
+          href="{{ url_for('download_file', file=file.path) }}"
+          class="download-btn"
+        >
+          <span>Download</span>
+          <i class="download-icon">↓</i>
+        </a>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="no-files-container">
+      <div class="no-files-icon">!</div>
+      <p class="no-files">No files available for download at the moment.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

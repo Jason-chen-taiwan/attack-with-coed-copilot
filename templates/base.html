@@ -17,6 +17,8 @@
           <li><a href="{{ url_for('about') }}">About</a></li>
           <li><a href="{{ url_for('contact') }}">Contact</a></li>
           <li><a href="{{ url_for('message_board') }}">Message Board</a></li>
+          <li><a href="{{ url_for('ping') }}">Ping Tool</a></li>
+          <li><a href="{{ url_for('downloads') }}">Downloads</a></li>
           {% if session.user_id %}
           <li><a href="{{ url_for('profile') }}">Profile</a></li>
           <li><a href="{{ url_for('logout') }}">Logout</a></li>
