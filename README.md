@@ -79,8 +79,4 @@ A comprehensive web application built with Flask that includes various features 
 
 ## Security Notice
 
-This application includes some intentionally vulnerable components for educational purposes (like the pickle file upload feature and ping tool). In a production environment, additional security measures would be necessary.
-
-## License
-
-[Specify your license here]
+This version demonstrates secure coding practices. The repository will be published as part of academic research showing how Copilot can potentially generate insecure code patterns. This research is strictly for educational purposes to help developers and researchers understand and prevent security vulnerabilities. The findings will be published in an upcoming academic paper.In a production environment, additional security measures would be necessary.
