@@ -1,0 +1,183 @@
+{% extends "base.html" %} {% block content %}
+<div class="container">
+  <div class="upload-header">
+    <h1>Restore Analysis Data</h1>
+    <p>
+      Upload a pickle (.pkl) file to restore previously saved analysis data.
+    </p>
+  </div>
+
+  <div class="upload-container">
+    {% if message %}
+    <div class="upload-message {{ status }}">{{ message }}</div>
+    {% endif %}
+
+    <form method="POST" enctype="multipart/form-data" class="upload-form">
+      <div class="file-drop-area" id="dropArea">
+        <span class="file-msg">Drag & drop your .pkl file here or</span>
+        <label for="fileInput" class="file-input-label">Choose File</label>
+        <input
+          type="file"
+          id="fileInput"
+          name="file"
+          accept=".pkl"
+          class="file-input"
+          required
+        />
+        <div class="file-preview" id="filePreview">
+          <span>No file selected</span>
+        </div>
+      </div>
+      <button type="submit" class="upload-btn">Upload and Restore Data</button>
+    </form>
+
+    <div class="upload-info">
+      <h3>Guidelines:</h3>
+      <ul>
+        <li>Only .pkl files containing analysis data are supported</li>
+        <li>Maximum file size: 10MB</li>
+        <li>
+          The system will attempt to restore and display the analysis data
+        </li>
+      </ul>
+    </div>
+
+    {% if analysis_data %}
+    <div class="analysis-results">
+      <h2>Restored Analysis Data</h2>
+
+      <div class="analysis-content">
+        {% if analysis_data is mapping %}
+        <div class="data-section">
+          <h3>Dictionary Data</h3>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Key</th>
+                <th>Value</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for key, value in analysis_data.items() %}
+              <tr>
+                <td>{{ key }}</td>
+                <td>
+                  {% if value is mapping or value is iterable and value is not
+                  string %} {{ value.__class__.__name__ }} with {{ value|length
+                  }} items {% else %} {{ value }} {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% elif analysis_data is iterable and analysis_data is not string %}
+        <div class="data-section">
+          <h3>List/Iterable Data</h3>
+          <p>Contains {{ analysis_data|length }} items</p>
+          <ul class="data-list">
+            {% for item in analysis_data[:10] %}
+            <li>{{ item }}</li>
+            {% endfor %} {% if analysis_data|length > 10 %}
+            <li>... ({{ analysis_data|length - 10 }} more items)</li>
+            {% endif %}
+          </ul>
+        </div>
+        {% else %}
+        <div class="data-section">
+          <h3>Object Data</h3>
+          <p>Type: {{ analysis_data.__class__.__name__ }}</p>
+          <pre class="data-raw">{{ analysis_data }}</pre>
+        </div>
+        {% endif %}
+
+        <!-- Show type information -->
+        <div class="data-type-info">
+          <h3>Type Information</h3>
+          <p>
+            Python Type: <code>{{ analysis_data.__class__.__name__ }}</code>
+          </p>
+
+          {% if analysis_data is defined and hasattr(analysis_data, '__dict__')
+          and analysis_data.__dict__ %}
+          <p>Available attributes:</p>
+          <ul>
+            {% for attr in analysis_data.__dict__ %}
+            <li>{{ attr }}</li>
+            {% endfor %}
+          </ul>
+          {% elif analysis_data is defined and hasattr(analysis_data, '__dir__')
+          %}
+          <p>Available attributes:</p>
+          <ul>
+            {% for attr in analysis_data.__dir__() %} {% if not
+            attr.startswith('__') %}
+            <li>{{ attr }}</li>
+            {% endif %} {% endfor %}
+          </ul>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const dropArea = document.getElementById("dropArea");
+    const fileInput = document.getElementById("fileInput");
+    const filePreview = document.getElementById("filePreview");
+
+    // Highlight drop area when drag over
+    ["dragenter", "dragover"].forEach((eventName) => {
+      dropArea.addEventListener(
+        eventName,
+        function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          dropArea.classList.add("highlight");
+        },
+        false
+      );
+    });
+
+    // Remove highlight on drag leave
+    ["dragleave", "drop"].forEach((eventName) => {
+      dropArea.addEventListener(
+        eventName,
+        function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          dropArea.classList.remove("highlight");
+        },
+        false
+      );
+    });
+
+    // Handle dropped files
+    dropArea.addEventListener("drop", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      fileInput.files = e.dataTransfer.files;
+      updateFilePreview();
+    });
+
+    // Update preview when file selected
+    fileInput.addEventListener("change", updateFilePreview);
+
+    function updateFilePreview() {
+      if (fileInput.files.length > 0) {
+        const file = fileInput.files[0];
+        const fileSize = (file.size / 1024).toFixed(2) + " KB";
+        filePreview.innerHTML = `<div class="file-info">
+                                  <span class="file-name">${file.name}</span>
+                                  <span class="file-size">${fileSize}</span>
+                                </div>`;
+      } else {
+        filePreview.innerHTML = "<span>No file selected</span>";
+      }
+    }
+  });
+</script>
+{% endblock %}

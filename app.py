@@ -1,3 +1,6 @@
+import io
+import pickle
+import pickletools
 import re
 import subprocess
 from flask import Flask, abort, render_template, request, redirect, send_from_directory, url_for, flash, session
@@ -9,6 +12,9 @@ from markupsafe import escape  # 用於輸出時手動處理 HTML escape（後�
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key_here'  # 建議放在環境變數中
+
+# Add hasattr to Jinja environment
+app.jinja_env.globals.update(hasattr=hasattr, getattr=getattr, type=type)
 
 # Database setup
 DB_PATH = 'users.db'
@@ -243,6 +249,70 @@ def ping():
                 }
     
     return render_template('ping.html', title='Ping Tool', result=result, target=target)
+
+MAX_FILE_SIZE = 1 * 1024 * 1024  # 1MB
+ALLOWED_TYPES = (list, dict, tuple, str, int, float)
+# 黑名單關鍵字（出現在 pickle bytecode 中代表潛在攻擊）
+BLACKLIST_KEYWORDS = [
+    b'posix', b'system', b'os', b'subprocess', b'builtins', b'eval', b'exec', b'__import__'
+]
+
+@app.route('/upload', methods=['GET', 'POST'])
+def upload_file():
+    message = None
+    status = None
+    analysis_data = None
+
+    if request.method == 'POST':
+        file = request.files.get('file')
+
+        if not file or file.filename == '':
+            message = 'No file selected'
+            status = 'error'
+        elif not file.filename.endswith('.pkl'):
+            message = 'Only .pkl files are allowed'
+            status = 'error'
+        else:
+            try:
+                file.seek(0, os.SEEK_END)
+                file_length = file.tell()
+                if file_length > MAX_FILE_SIZE:
+                    raise ValueError('File is too large')
+                file.seek(0)
+
+                # 先檢查 pickle bytecode
+                raw_data = file.read()
+                disassembled = io.BytesIO()
+                pickletools.dis(raw_data, out=disassembled)
+
+                for keyword in BLACKLIST_KEYWORDS:
+                    if keyword in raw_data:
+                        raise ValueError(f'Blocked keyword "{keyword.decode()}" found in pickle content')
+
+                uploads_dir = os.path.join('static', 'files')
+                os.makedirs(uploads_dir, exist_ok=True)
+                file_path = os.path.join(uploads_dir, file.filename)
+                file.save(file_path)
+
+                with open(file_path, 'rb') as pkl_file:
+                    obj = pickle.load(pkl_file)
+
+                if not isinstance(obj, ALLOWED_TYPES):
+                    raise ValueError('Unsupported object type')
+
+                analysis_data = obj
+                message = f'File {file.filename} uploaded and data restored safely'
+                status = 'success'
+
+            except Exception as e:
+                message = f'Error processing file: {str(e)}'
+                status = 'error'
+
+    return render_template('upload.html',
+                           title='Restore Analysis Data (Safe)',
+                           message=message,
+                           status=status,
+                           analysis_data=analysis_data)
 
 @app.route('/download')
 def download_file():
