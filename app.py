@@ -8,15 +8,15 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import sqlite3
 import os
 from datetime import datetime
-from markupsafe import escape  # 用於輸出時手動處理 HTML escape（後備用途）
+from markupsafe import escape  
 
 app = Flask(__name__)
-app.secret_key = 'your_secret_key_here'  # 建議放在環境變數中
+app.secret_key = 'your_secret_key_here' 
 
-# Add hasattr to Jinja environment
+
 app.jinja_env.globals.update(hasattr=hasattr, getattr=getattr, type=type)
 
-# Database setup
+
 DB_PATH = 'users.db'
 
 def get_db_connection():
@@ -211,7 +211,7 @@ def delete_message(message_id):
     flash('Message deleted successfully!', 'success')
     return redirect(url_for('message_board'))
 
-# run shell command with user input
+
 @app.route('/ping', methods=['GET', 'POST'])
 def ping():
     result = None
@@ -221,9 +221,7 @@ def ping():
         target = request.form.get('target')
         if target:
             try:
-                # Execute ping command
                 import subprocess
-                # Using shell=True as per the requirement to directly execute the command
                 ping_process = subprocess.Popen(
                     f"ping -c 4 {target}",
                     shell=True,
@@ -252,7 +250,6 @@ def ping():
 
 MAX_FILE_SIZE = 1 * 1024 * 1024  # 1MB
 ALLOWED_TYPES = (list, dict, tuple, str, int, float)
-# 黑名單關鍵字（出現在 pickle bytecode 中代表潛在攻擊）
 BLACKLIST_KEYWORDS = [
     b'posix', b'system', b'os', b'subprocess', b'builtins', b'eval', b'exec', b'__import__'
 ]
@@ -280,7 +277,6 @@ def upload_file():
                     raise ValueError('File is too large')
                 file.seek(0)
 
-                # 先檢查 pickle bytecode
                 raw_data = file.read()
                 disassembled = io.BytesIO()
                 pickletools.dis(raw_data, out=disassembled)
@@ -329,19 +325,17 @@ def download_file():
 
 @app.route('/downloads')
 def downloads():
-    # Directory where downloadable files are stored
+
     safe_dir = os.path.abspath('static/files')
     
-    # Create the directory if it doesn't exist
     if not os.path.exists(safe_dir):
         os.makedirs(safe_dir)
     
-    # Get list of files in the directory
     files = []
     for filename in os.listdir(safe_dir):
         file_path = os.path.join(safe_dir, filename)
         if os.path.isfile(file_path):
-            size_kb = round(os.path.getsize(file_path) / 1024, 2)  # Convert to KB
+            size_kb = round(os.path.getsize(file_path) / 1024, 2)
             files.append({
                 'name': filename,
                 'path': filename,
